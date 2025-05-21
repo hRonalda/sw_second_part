@@ -62,4 +62,17 @@ jobs:
     - name: Run Application in Singularity
       run: |
         singularity run grayscale.sif input output Average
+    
+    - name: Upload output images
+      uses: actions/upload-artifact@v2
+      with:
+        name: pgm-results
+        path: output/
+
+    - name: Upload grayscale.sif
+      uses: actions/upload-artifact@v2
+      with:
+        name: grayscale-sif
+        path: grayscale.sif
+
 
