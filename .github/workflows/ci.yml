@@ -61,4 +61,5 @@ jobs:
 
     - name: Run Application in Singularity
       run: |
-        singularity run  grayscale.sif 
+        singularity run grayscale.sif input output Average
+
