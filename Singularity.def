@@ -2,10 +2,11 @@ Bootstrap: docker
 From: ubuntu:22.04 
 
 %labels
-    Author JoeChen  
+    Author "QIAO"
+    Version "1.0"
 
 %post
-    # 安装构建工具和依赖
+    # download  tools
     apt-get update && apt-get install -y \
         build-essential \
         cmake \
@@ -13,10 +14,10 @@ From: ubuntu:22.04
         libgtest-dev \
         && rm -rf /var/lib/apt/lists/*
 
-    # 创建编译目录
+    # build the context
     mkdir -p /opt/app/build
 
-    # 编译项目
+    # cmake the project
     cd /opt/app/build
     cmake ..
     make
@@ -29,3 +30,4 @@ From: ubuntu:22.04
 
 %runscript
     exec /opt/app/build/convert_grayscale "$@"
+    echo "This is a Singularity container for grayscale."
