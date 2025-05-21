@@ -28,4 +28,4 @@ From: ubuntu:22.04
     export PATH=/opt/app/build:$PATH
 
 %runscript
-    exec /opt/app/build/test_grayscale "$@"
+    exec /opt/app/build/convert_grayscale "$@"
