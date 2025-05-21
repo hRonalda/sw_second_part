@@ -1,0 +1,64 @@
+name: Build and Run Singularity Container
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Checkout code with submodules
+      uses: actions/checkout@v3
+      with:
+          submodules: recursive
+    - name: Show submodule status
+      run: git submodule status
+          
+    - name: install dependencies for Singularity 
+      run: |
+        sudo apt-get install -y \
+          uuid-dev \
+          build-essential \
+          libseccomp-dev \
+          pkg-config \
+          squashfs-tools \
+          cryptsetup \
+          curl wget git
+
+    - name: install Go
+      run: |
+        export GOVERSION=1.17.3 OS=linux ARCH=amd64
+        wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz \
+          https://dl.google.com/go/go${GOVERSION}.${OS}-${ARCH}.tar.gz
+        sudo tar -C /usr/local -xzf /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz
+
+    - name : setup Env for GO
+      run: echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
+      
+    - name: Install Singularity
+      run: |
+        export VERSION=3.8.7 && # adjust this as necessary \
+        wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz \
+        && sudo tar -xzf singularity-${VERSION}.tar.gz \
+        && cd singularity-${VERSION} \
+        && sudo ./mconfig \
+        && sudo make -C builddir \
+        && sudo make -C builddir install
+  
+    - name : verifyVersion
+      run: singularity --version
+  
+    - name: Build Singularity Image
+      run: |
+        sudo singularity build grayscale.sif Singularity.def
+
+    - name: Run Application in Singularity
+      run: |
+        singularity run  grayscale.sif 
