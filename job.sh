@@ -42,7 +42,7 @@ export SINGULARITY_CACHEDIR=$TMPDIR/singularity_cache
 
 # Run application outside singularity container (Just for fun)
 # srun singularity exec  ~/seproject/graysclae.sif mpiexec -np 2 ~/seproject/main
-srun singularity exec  ~/seproject/grayscale.sif mpiexec -np 2 ~/seproject/main
+# srun singularity exec  ~/seproject/grayscale.sif mpiexec -np 2 ~/seproject/main
 
 # -----------------------------------------------------------------------------
 # Core Work Of This Job File: Do matrix multiplication by using MPI (2 tasks).
