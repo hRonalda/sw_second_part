@@ -24,6 +24,7 @@ jobs:
           
     - name: install dependencies for Singularity 
       run: |
+        sudo apt-get update
         sudo apt-get install -y \
           uuid-dev \
           build-essential \
@@ -31,7 +32,11 @@ jobs:
           pkg-config \
           squashfs-tools \
           cryptsetup \
-          curl wget git
+          curl \
+          wget \
+          git \
+          uidmap \
+          runc # or crun (but runc is more widely supported)
     
     - name: install Go
       run: |
