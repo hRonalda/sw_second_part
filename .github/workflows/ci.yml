@@ -82,37 +82,58 @@ jobs:
     - name: Convert job.sh to UNIX line endings
       run: dos2unix job.sh || true
 
-    - name: Remove old host-key And Add new host-key to known_hosts
+
+    - name: Setup SSH key for remote connection
       run: |
         mkdir -p ~/.ssh
-        touch ~/.ssh/known_hosts
-        ssh-keygen -R ${{ secrets.SLURM_HOST }} || true
+        echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.SLURM_HOST }} >> ~/.ssh/known_hosts
 
     - name: Transfer job script and sif file to cluster via scp
-      env:
-        SLURM_USER: ${{ secrets.SLURM_USER }}
-        SLURM_HOST: ${{ secrets.SLURM_HOST }}
-        SLURM_PASSWORD: ${{ secrets.SLURM_PASSWORD }}
       run: |
-        sudo apt-get install -y sshpass
-        sshpass -p "${{ secrets.SLURM_PASSWORD }}" scp \
-          -o UserKnownHostsFile=/dev/null \
-          -o StrictHostKeyChecking=no \
-          -o PubkeyAuthentication=no \
-          grayscale.sif ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
-
-        sshpass -p "${{ secrets.SLURM_PASSWORD }}" scp \
-          -o UserKnownHostsFile=/dev/null \
-          -o StrictHostKeyChecking=no \
-          -o PubkeyAuthentication=no \
-          job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+        scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
 
     - name: Submit job to cluster via SSH
-      env:
-        SLURM_USER: ${{ secrets.SLURM_USER }}
-        SLURM_HOST: ${{ secrets.SLURM_HOST }}
-        SLURM_PASSWORD: ${{ secrets.SLURM_PASSWORD }}
       run: |
-        sshpass -p "${{ secrets.SLURM_PASSWORD }}" ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
+        ssh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
         "cd ~/seproject && sbatch job.sh"
+
+
+#    - name: Remove old host-key And Add new host-key to known_hosts
+#      run: |
+#        mkdir -p ~/.ssh
+#        touch ~/.ssh/known_hosts
+#        ssh-keygen -R ${{ secrets.SLURM_HOST }} || true
+#        ssh-keyscan -H ${{ secrets.SLURM_HOST }} >> ~/.ssh/known_host
+
+#    - name: Transfer job script and sif file to cluster via scp
+#      env:
+#        SLURM_USER: ${{ secrets.SLURM_USER }}
+#        SLURM_HOST: ${{ secrets.SLURM_HOST }}
+#        SLURM_PASSWORD: ${{ secrets.SLURM_PASSWORD }}
+#      run: |
+##        sudo apt-get install -y sshpass
+#        sshpass -p "${{ secrets.SLURM_PASSWORD }}" scp \
+#          -o UserKnownHostsFile=/dev/null \
+#          -o StrictHostKeyChecking=no \
+#          -o PubkeyAuthentication=no \
+#          grayscale.sif ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+
+#        sshpass -p "${{ secrets.SLURM_PASSWORD }}" scp \
+#          -o UserKnownHostsFile=/dev/null \
+#          -o StrictHostKeyChecking=no \
+#          -o PubkeyAuthentication=no \
+#          job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+
+#    - name: Submit job to cluster via SSH
+#      env:
+#        SLURM_USER: ${{ secrets.SLURM_USER }}
+#        SLURM_HOST: ${{ secrets.SLURM_HOST }}
+#        SLURM_PASSWORD: ${{ secrets.SLURM_PASSWORD }}
+#      run: |
+#        sshpass -p "${{ secrets.SLURM_PASSWORD }}" ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
+#        "cd ~/seproject && sbatch job.sh"
+
+
+
