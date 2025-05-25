@@ -101,12 +101,10 @@ jobs:
         SLURM_HOST: ${{ secrets.SLURM_HOST }}
         SLURM_PASSWORD: ${{ secrets.SLURM_PASSWORD }}
       run: |
-        sshpass -p "${{ secrets.SLURM_PASSWORD }}" ssh \
+        echo "cd ~/seproject && \
+        dos2unix job_script.slurm && \
+        sbatch job_script.slurm" | sshpass -p "${{ secrets.SLURM_PASSWORD }}" ssh \
           -o UserKnownHostsFile=/dev/null \
           -o StrictHostKeyChecking=no \
           -o PreferredAuthentications=password \
-          ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} <<EOF
-cd ~/seproject
-dos2unix job_script.slurm
-sbatch job_script.slurm
-EOF
+          ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}
