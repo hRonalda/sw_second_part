@@ -87,13 +87,13 @@ jobs:
           -o UserKnownHostsFile=/dev/null \
           -o StrictHostKeyChecking=no \
           -o PreferredAuthentications=password \
-          grayscale.sif ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject
+          grayscale.sif ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
 
         sshpass -p "${{ secrets.SLURM_PASSWORD }}" scp \
           -o UserKnownHostsFile=/dev/null \
           -o StrictHostKeyChecking=no \
           -o PreferredAuthentications=password \
-          job_script.slurm ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject
+          job_script.slurm ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
 
     - name: Submit job to cluster via ssh
       env:
@@ -105,8 +105,5 @@ jobs:
           -o UserKnownHostsFile=/dev/null \
           -o StrictHostKeyChecking=no \
           -o PreferredAuthentications=password \
-          ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} << 'EOF'
-          cd ~/seproject
-          dos2unix job_script.slurm
-          sbatch job_script.slurm
-EOF
+          ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
+          "cd ~/seproject && dos2unix job_script.slurm && sbatch job_script.slurm"
