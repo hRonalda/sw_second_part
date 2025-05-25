@@ -35,21 +35,19 @@ jobs:
     
     - name: install Go
       run: |
-        export GOVERSION=1.17.3 OS=linux ARCH=amd64
-        wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz \
-          https://dl.google.com/go/go${GOVERSION}.${OS}-${ARCH}.tar.gz
-        sudo tar -C /usr/local -xzf /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz
-    
-    - name : setup Env for GO
-      run: echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
+        wget https://go.dev/dl/go1.17.3.linux-amd64.tar.gz
+        sudo tar -C /usr/local -xzf go1.17.3.linux-amd64.tar.gz
+        echo "PATH=/usr/local/go/bin:$PATH" >> $GITHUB_ENV    
+#    - name : setup Env for GO
+#     run: echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
       
+
     - name: Install Singularity
       run: |
-        wget https://github.com/sylabs/singularity/releases/download/v4.1.3/singularity-ce_4.1.3-focal_amd64.deb
+        get https://github.com/sylabs/singularity/releases/download/v4.1.3/singularity-ce_4.1.3-focal_amd64.deb
         sudo apt-get install -y libfuse2 fuse2fs
         sudo dpkg -i singularity-ce_4.1.3-focal_amd64.deb
         sudo apt-get install -f
-
 
     - name : verifyVersion
       run: singularity --version
