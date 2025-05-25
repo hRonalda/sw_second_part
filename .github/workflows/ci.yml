@@ -105,7 +105,7 @@ jobs:
           -o UserKnownHostsFile=/dev/null \
           -o StrictHostKeyChecking=no \
           -o PreferredAuthentications=password \
-          ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} << EOF \
+          ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} << EOF
           cd ~/seproject
           dos2unix job_script.slurm
           sbatch job_script.slurm
