@@ -99,11 +99,6 @@ jobs:
         eval "$(ssh-agent -s)"
         setsid ssh-add ~/.ssh/my_key < /dev/null
 
-#    - name: Start ssh-agent and add private key
-#      run: |
-#        eval "$(ssh-agent -s)"
-#        ssh-add ~/.ssh/my_key <<< "${{ secrets.G100_SSH_PASSPHRASE }}"
-
     - name: Transfer job script and sif file to cluster via scp
       run: |
 #        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
