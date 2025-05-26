@@ -22,33 +22,21 @@ jobs:
     - name: Show submodule status
       run: git submodule status
 
-#    - name: install dependencies for Singularity 
-#      run: |
-#        sudo apt-get update
-#        sudo apt-get install -y \
-#          uuid-dev \
-#          build-essential \
-#          libseccomp-dev \
-#          pkg-config \
-#          squashfs-tools \
-#          cryptsetup \
-#          curl \
-#          wget \
-#          git \
-#          uidmap \
-#          runc # or crun (but runc is more widely supported)
-
     - name: install dependencies for Singularity 
       run: |
-        brew update
-        brew install \
-          squashfs \
-          libseccomp \
+        sudo apt-get update
+        sudo apt-get install -y \
+          uuid-dev \
+          build-essential \
+          libseccomp-dev \
           pkg-config \
-          wget \
+          squashfs-tools \
+          cryptsetup \
           curl \
+          wget \
           git \
-          runc
+          uidmap \
+          runc # or crun (but runc is more widely supported)
 
     - name: install Go
       run: |
