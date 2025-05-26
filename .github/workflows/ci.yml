@@ -82,7 +82,6 @@ jobs:
     - name: Convert job.sh to UNIX line endings
       run: dos2unix job.sh || true
 
-
     - name: Add G100 host key to known_hosts
       run: |
         mkdir -p ~/.ssh
