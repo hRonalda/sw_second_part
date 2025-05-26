@@ -83,22 +83,21 @@ jobs:
       run: dos2unix job.sh || true
 
 
-    - name: Setup SSH key for remote connection
+    - name: Add G100 host key to know_hosts
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SLURM_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H login.g100.cineca.it >> ~/.ssh/known_hosts
 
     - name: Transfer job script and sif file to cluster via scp
       run: |
-        scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
-
+#        scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh rhuang00@login.g100.cineca.it:~/seproject/
+   
     - name: Submit job to cluster via SSH
       run: |
-        ssh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
-        "cd ~/seproject && sbatch job.sh"
-
+#        ssh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
+#        "cd ~/seproject && sbatch job.sh"
+        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no rhuang00@login.g100.cineca.it "cd ~/seproject && sbatch job.sh"
 
 #    - name: Remove old host-key And Add new host-key to known_hosts
 #      run: |
