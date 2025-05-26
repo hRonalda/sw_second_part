@@ -89,13 +89,23 @@ jobs:
     - name: Transfer job script and sif file to cluster via scp
       run: |
         # scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
-        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh rhuang00@login.g100.cineca.it:~/seproject/
+        scp -i $HOME/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh rhuang00@login.g100.cineca.it:~/seproject/
 
     - name: Submit job to cluster via SSH
       run: |
         # ssh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
         #   "cd ~/seproject && sbatch job.sh"
-        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no rhuang00@login.g100.cineca.it "cd ~/seproject && sbatch job.sh"
+        ssh -i $HOME/.ssh/my_key -o StrictHostKeyChecking=no rhuang00@login.g100.cineca.it "cd ~/seproject && sbatch job.sh"
+#    - name: Transfer job script and sif file to cluster via scp
+#      run: |
+        # scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+#        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh rhuang00@login.g100.cineca.it:~/seproject/
+
+#    - name: Submit job to cluster via SSH
+#      run: |
+        # ssh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
+        #   "cd ~/seproject && sbatch job.sh"
+#        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no rhuang00@login.g100.cineca.it "cd ~/seproject && sbatch job.sh"
 
 #    - name: Remove old host-key And Add new host-key to known_hosts
 #      run: |
