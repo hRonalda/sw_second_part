@@ -94,10 +94,10 @@ jobs:
         echo "echo '${{ secrets.G100_SSH_PASSPHRASE }}'" >> /tmp/askpass.sh
         chmod +x /tmp/askpass.sh
 
-        export DISPLAY=:0
         export SSH_ASKPASS=/tmp/askpass.sh
+        export DISPLAY=:99
         eval "$(ssh-agent -s)"
-        setsid ssh-add ~/.ssh/my_key < /dev/null
+        ssh-add ~/.ssh/my_key
 
     - name: Transfer job script and sif file to cluster via scp
       run: |
