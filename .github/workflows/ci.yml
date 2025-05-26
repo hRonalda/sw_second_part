@@ -81,21 +81,36 @@ jobs:
     - name: Convert job.sh to UNIX line endings
       run: dos2unix job.sh || true
 
-    - name: Add G100 host key to known_hosts
+    - name: Setup SSH key from GitHub Secret
       run: |
         mkdir -p ~/.ssh
-        ssh-keyscan -H login.g100.cineca.it >> ~/.ssh/known_hosts
+        echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/my_key
+        chmod 600 ~/.ssh/my_key
+        ssh-keyscan -H ${{ secrets.SLURM_HOST }} >> ~/.ssh/known_hosts
 
     - name: Transfer job script and sif file to cluster via scp
       run: |
-        # scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
-        scp -i $HOME/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh rhuang00@login.g100.cineca.it:~/seproject/
+        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
 
     - name: Submit job to cluster via SSH
       run: |
+        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "cd ~/seproject && sbatch job.sh"
+
+#    - name: Add G100 host key to known_hosts
+#      run: |
+#        mkdir -p ~/.ssh
+#        ssh-keyscan -H login.g100.cineca.it >> ~/.ssh/known_hosts
+
+#    - name: Transfer job script and sif file to cluster via scp
+#      run: |
+        # scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+#        scp -i $HOME/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh rhuang00@login.g100.cineca.it:~/seproject/
+
+#    - name: Submit job to cluster via SSH
+#      run: |
         # ssh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
         #   "cd ~/seproject && sbatch job.sh"
-        ssh -i $HOME/.ssh/my_key -o StrictHostKeyChecking=no rhuang00@login.g100.cineca.it "cd ~/seproject && sbatch job.sh"
+#        ssh -i $HOME/.ssh/my_key -o StrictHostKeyChecking=no rhuang00@login.g100.cineca.it "cd ~/seproject && sbatch job.sh"
 #    - name: Transfer job script and sif file to cluster via scp
 #      run: |
         # scp grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
