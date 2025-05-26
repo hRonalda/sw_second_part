@@ -45,7 +45,6 @@ jobs:
           squashfs \
           libseccomp \
           pkg-config \
-          cryptsetup \
           wget \
           curl \
           git \
