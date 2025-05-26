@@ -88,18 +88,31 @@ jobs:
         chmod 600 ~/.ssh/my_key
         ssh-keyscan -H ${{ secrets.SLURM_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Start ssh-agent and add private key
+    - name: Use passphrase via fake ssh-askpass
       run: |
+        echo '#!/bin/sh' > /tmp/askpass.sh
+        echo "echo '${{ secrets.G100_SSH_PASSPHRASE }}'" >> /tmp/askpass.sh
+        chmod +x /tmp/askpass.sh
+
+        export DISPLAY=:0
+        export SSH_ASKPASS=/tmp/askpass.sh
         eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/my_key <<< "${{ secrets.G100_SSH_PASSPHRASE }}"
+        setsid ssh-add ~/.ssh/my_key < /dev/null
+
+#    - name: Start ssh-agent and add private key
+#      run: |
+#        eval "$(ssh-agent -s)"
+#        ssh-add ~/.ssh/my_key <<< "${{ secrets.G100_SSH_PASSPHRASE }}"
 
     - name: Transfer job script and sif file to cluster via scp
       run: |
-        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+#        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+        scp -o StrictHostKeyChecking=no grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
 
     - name: Submit job to cluster via SSH
       run: |
-        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "cd ~/seproject && sbatch job.sh"
+#        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "cd ~/seproject && sbatch job.sh"
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "cd ~/seproject && sbatch job.sh"
 
 #    - name: Add G100 host key to known_hosts
 #      run: |
