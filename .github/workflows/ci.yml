@@ -75,8 +75,9 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/my_key
         echo "${{ secrets.G100_SSH_CERT }}" > ~/.ssh/my_key-cert.pub
+        echo "${{ secrets.G100_SSH_PUB }}" > ~/.ssh/my_key.pub
         chmod 600 ~/.ssh/my_key
-        chmod 644 ~/.ssh/my_key-cert.pub
+        chmod 644 ~/.ssh/my_key-cert.pub ~/.ssh/my_key.pub
 
         cat <<EOF > ~/.ssh/config
         Host galileo
