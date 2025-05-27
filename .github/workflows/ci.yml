@@ -22,49 +22,38 @@ jobs:
     - name: Show submodule status
       run: git submodule status
 
-    - name: install dependencies for Singularity 
+    - name: Install dependencies for Singularity
       run: |
         sudo apt-get update
         sudo apt-get install -y \
-          uuid-dev \
-          build-essential \
-          libseccomp-dev \
-          pkg-config \
-          squashfs-tools \
-          cryptsetup \
-          curl \
-          wget \
-          git \
-          uidmap \
-          runc # or crun (but runc is more widely supported)
+          uuid-dev build-essential libseccomp-dev pkg-config \
+          squashfs-tools cryptsetup curl wget git uidmap runc openssh-client
 
-    - name: install Go
+    - name: Install Go
       run: |
         export GOVERSION=1.17.3 OS=linux ARCH=amd64
         wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz \
           https://dl.google.com/go/go${GOVERSION}.${OS}-${ARCH}.tar.gz
         sudo tar -C /usr/local -xzf /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz
 
-    - name : setup Env for GO
+    - name: Setup Go Environment
       run: echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
 
     - name: Install Singularity
       run: |
         wget https://github.com/sylabs/singularity/releases/download/v4.1.3/singularity-ce_4.1.3-focal_amd64.deb
         sudo apt-get install -y libfuse2 fuse2fs
-        sudo dpkg -i singularity-ce_4.1.3-focal_amd64.deb
-        sudo apt-get install -f
+        sudo dpkg -i singularity-ce_4.1.3-focal_amd64.deb || true
+        sudo apt-get install -f -y
 
-    - name : verifyVersion
+    - name: Verify Singularity version
       run: singularity --version
 
     - name: Build Singularity Image
-      run: |
-        sudo singularity build grayscale.sif Singularity.def
+      run: sudo singularity build grayscale.sif Singularity.def
 
     - name: Run Application in Singularity
-      run: |
-        singularity run grayscale.sif input output Average
+      run: singularity run grayscale.sif input output Average
 
     - name: Upload output images
       uses: actions/upload-artifact@v4
@@ -81,23 +70,30 @@ jobs:
     - name: Convert job.sh to UNIX line endings
       run: dos2unix job.sh || true
 
-    - name: Setup SSH key from GitHub Secret
+    - name: Refresh known_hosts entry
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/my_key
-        chmod 600 ~/.ssh/my_key
+        ssh-keygen -R ${{ secrets.SLURM_HOST }} || true
         ssh-keyscan -H ${{ secrets.SLURM_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Ensure ~/seproject exists
+    - name: Setup SSH key from GitHub Secrets
+      run: |
+        echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/my_key
+        chmod 600 ~/.ssh/my_key
+        echo "${{ secrets.G100_SSH_CERT }}" > ~/.ssh/my_key-cert.pub
+        chmod 644 ~/.ssh/my_key-cert.pub
+
+    - name: Ensure ~/seproject exists on Galileo
       run: |
         ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "mkdir -p ~/seproject"
 
     - name: Transfer job script and sif file to cluster via scp
       run: |
-        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
-#        scp -o StrictHostKeyChecking=no grayscale.sif job.sh ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh \
+        ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
 
     - name: Submit job to cluster via SSH
       run: |
-        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "cd ~/seproject && sbatch job.sh"
-        #ssh -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "cd ~/seproject && sbatch job.sh"
+        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no \
+        ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
+        "cd ~/seproject && sbatch job.sh"
