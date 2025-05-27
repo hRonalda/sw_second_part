@@ -70,30 +70,33 @@ jobs:
     - name: Convert job.sh to UNIX line endings
       run: dos2unix job.sh || true
 
-    - name: Refresh known_hosts entry
+    - name: Setup SSH key, cert, and config
       run: |
         mkdir -p ~/.ssh
-        ssh-keygen -R ${{ secrets.SLURM_HOST }} || true
-        ssh-keyscan -H ${{ secrets.SLURM_HOST }} >> ~/.ssh/known_hosts
-
-    - name: Setup SSH key from GitHub Secrets
-      run: |
         echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/my_key
-        chmod 600 ~/.ssh/my_key
         echo "${{ secrets.G100_SSH_CERT }}" > ~/.ssh/my_key-cert.pub
+        chmod 600 ~/.ssh/my_key
         chmod 644 ~/.ssh/my_key-cert.pub
+
+        cat <<EOF > ~/.ssh/config
+        Host galileo
+          HostName ${{ secrets.SLURM_HOST }}
+          User ${{ secrets.SLURM_USER }}
+          IdentityFile ~/.ssh/my_key
+          CertificateFile ~/.ssh/my_key-cert.pub
+          IdentitiesOnly yes
+          StrictHostKeyChecking no
+          UserKnownHostsFile=/dev/null
+        EOF
 
     - name: Ensure ~/seproject exists on Galileo
       run: |
-        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} "mkdir -p ~/seproject"
+        ssh -F ~/.ssh/config galileo "mkdir -p ~/seproject"
 
     - name: Transfer job script and sif file to cluster via scp
       run: |
-        scp -i ~/.ssh/my_key -o StrictHostKeyChecking=no grayscale.sif job.sh \
-        ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }}:~/seproject/
+        scp -F ~/.ssh/config grayscale.sif job.sh galileo:~/seproject/
 
     - name: Submit job to cluster via SSH
       run: |
-        ssh -i ~/.ssh/my_key -o StrictHostKeyChecking=no \
-        ${{ secrets.SLURM_USER }}@${{ secrets.SLURM_HOST }} \
-        "cd ~/seproject && sbatch job.sh"
+        ssh -F ~/.ssh/config galileo "cd ~/seproject && sbatch job.sh"
