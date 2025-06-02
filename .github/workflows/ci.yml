@@ -14,7 +14,7 @@ jobs:
 #    runs-on: self-hosted
     # Alternative for GitHub-hosted runners (disabled due to incompatibility with passphrase flow)
     # runs-on: ubuntu-24.04
-     runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
     # Step 1: Clone the repository
@@ -90,7 +90,6 @@ jobs:
       run: dos2unix job.sh || true
 
     # Step 13: Set up SSH authentication using private key, certificate, and public key
-    - name: Setup SSH key, cert, and config
     - name: Setup SSH key, cert, pub, and agent (GitHub-hosted runner compatible)
       run: |
         echo "Setting up SSH configuration..."
@@ -101,29 +100,26 @@ jobs:
         chmod 600 ~/.ssh/my_key
         chmod 644 ~/.ssh/my_key-cert.pub ~/.ssh/my_key.pub
 
-        # Install expect if missing
         sudo apt-get update && sudo apt-get install -y expect
 
-        # Add the key to ssh-agent using expect to provide the passphrase
         eval "$(ssh-agent -s)"
         expect <<EOF
-        spawn ssh-add ~/.ssh/my_key
-        expect "Enter passphrase"
-        send "${{ secrets.G100_SSH_PASSPHRASE }}\r"
-        expect eof
-    EOF
+spawn ssh-add ~/.ssh/my_key
+expect "Enter passphrase"
+send "${{ secrets.G100_SSH_PASSPHRASE }}\r"
+expect eof
+EOF
 
-        # Create SSH config
         cat <<CONFIG > ~/.ssh/config
-        Host galileo
-        HostName ${{ secrets.SLURM_HOST }}
-        User ${{ secrets.SLURM_USER }}
-        IdentityFile ~/.ssh/my_key
-        CertificateFile ~/.ssh/my_key-cert.pub
-        IdentitiesOnly yes
-        StrictHostKeyChecking no
-        UserKnownHostsFile=/dev/null
-    CONFIG
+Host galileo
+HostName ${{ secrets.SLURM_HOST }}
+User ${{ secrets.SLURM_USER }}
+IdentityFile ~/.ssh/my_key
+CertificateFile ~/.ssh/my_key-cert.pub
+IdentitiesOnly yes
+StrictHostKeyChecking no
+UserKnownHostsFile=/dev/null
+CONFIG
 
     # Step 14: Ensure working directory exists on remote cluster
     - name: Ensure ~/seproject exists on Galileo
