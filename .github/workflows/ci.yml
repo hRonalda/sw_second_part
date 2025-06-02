@@ -11,10 +11,10 @@ jobs:
   build-run:
     # Use a self-hosted runner 
     # Required for workflows needing Singularity and passphrase input
-    runs-on: self-hosted
+#    runs-on: self-hosted
     # Alternative for GitHub-hosted runners (disabled due to incompatibility with passphrase flow)
     # runs-on: ubuntu-24.04
-    # runs-on: ubuntu-latest
+     runs-on: ubuntu-latest
 
     steps:
     # Step 1: Clone the repository
@@ -91,6 +91,7 @@ jobs:
 
     # Step 13: Set up SSH authentication using private key, certificate, and public key
     - name: Setup SSH key, cert, and config
+    - name: Setup SSH key, cert, pub, and agent (GitHub-hosted runner compatible)
       run: |
         echo "Setting up SSH configuration..."
         mkdir -p ~/.ssh
@@ -99,16 +100,30 @@ jobs:
         echo "${{ secrets.G100_SSH_PUB }}" > ~/.ssh/my_key.pub
         chmod 600 ~/.ssh/my_key
         chmod 644 ~/.ssh/my_key-cert.pub ~/.ssh/my_key.pub
-        cat <<EOF > ~/.ssh/config
+
+        # Install expect if missing
+        sudo apt-get update && sudo apt-get install -y expect
+
+        # Add the key to ssh-agent using expect to provide the passphrase
+        eval "$(ssh-agent -s)"
+        expect <<EOF
+        spawn ssh-add ~/.ssh/my_key
+        expect "Enter passphrase"
+        send "${{ secrets.G100_SSH_PASSPHRASE }}\r"
+        expect eof
+    EOF
+
+        # Create SSH config
+        cat <<CONFIG > ~/.ssh/config
         Host galileo
-          HostName ${{ secrets.SLURM_HOST }}
-          User ${{ secrets.SLURM_USER }}
-          IdentityFile ~/.ssh/my_key
-          CertificateFile ~/.ssh/my_key-cert.pub
-          IdentitiesOnly yes
-          StrictHostKeyChecking no
-          UserKnownHostsFile=/dev/null
-        EOF
+        HostName ${{ secrets.SLURM_HOST }}
+        User ${{ secrets.SLURM_USER }}
+        IdentityFile ~/.ssh/my_key
+        CertificateFile ~/.ssh/my_key-cert.pub
+        IdentitiesOnly yes
+        StrictHostKeyChecking no
+        UserKnownHostsFile=/dev/null
+    CONFIG
 
     # Step 14: Ensure working directory exists on remote cluster
     - name: Ensure ~/seproject exists on Galileo
