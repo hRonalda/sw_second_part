@@ -11,10 +11,10 @@ jobs:
   build-run:
     # Use a self-hosted runner 
     # Required for workflows needing Singularity and passphrase input
-    # runs-on: self-hosted
+    runs-on: self-hosted
     # Alternative for GitHub-hosted runners (disabled due to incompatibility with passphrase flow)
     # runs-on: ubuntu-24.04
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
 
     steps:
     # Step 1: Clone the repository
@@ -38,7 +38,6 @@ jobs:
         sudo apt-get install -y \
           uuid-dev build-essential libseccomp-dev pkg-config \
           squashfs-tools cryptsetup curl wget git uidmap runc openssh-client
-
     # Step 4: Install a specific version of Go (required for Singularity)
     - name: Install Go
       run: |
@@ -46,7 +45,6 @@ jobs:
         wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz \
           https://dl.google.com/go/go${GOVERSION}.${OS}-${ARCH}.tar.gz
         sudo tar -C /usr/local -xzf /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz
-
     # Step 5: Export Go to PATH
     - name: Setup Go Environment
       run: echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
@@ -58,7 +56,6 @@ jobs:
         sudo apt-get install -y libfuse2 fuse2fs
         sudo dpkg -i singularity-ce_4.1.3-focal_amd64.deb || true
         sudo apt-get install -f -y
-
     # Step 7: Verify that Singularity was successfully installed
     - name: Verify Singularity version
       run: singularity --version
@@ -90,26 +87,16 @@ jobs:
       run: dos2unix job.sh || true
 
     # Step 13: Set up SSH authentication using private key, certificate, and public key
-    - name: Setup SSH key, cert, pub, and agent (GitHub-hosted runner compatible)
+    - name: Setup SSH key, cert, and config
       run: |
         echo "Setting up SSH configuration..."
         mkdir -p ~/.ssh
-        echo "${{ secrets.G100_SSH_KEY }}" | tr -d '\r' > ~/.ssh/my_key
-        echo "${{ secrets.G100_SSH_CERT }}" | tr -d '\r' > ~/.ssh/my_key-cert.pub
-        echo "${{ secrets.G100_SSH_PUB }}" | tr -d '\r' > ~/.ssh/my_key.pub
+        echo "${{ secrets.G100_SSH_KEY }}" > ~/.ssh/my_key
+        echo "${{ secrets.G100_SSH_CERT }}" > ~/.ssh/my_key-cert.pub
+        echo "${{ secrets.G100_SSH_PUB }}" > ~/.ssh/my_key.pub
         chmod 600 ~/.ssh/my_key
         chmod 644 ~/.ssh/my_key-cert.pub ~/.ssh/my_key.pub
-
-        sudo apt-get update && sudo apt-get install -y expect
-
-        eval "$(ssh-agent -s)"
-        echo 'spawn ssh-add ~/.ssh/my_key' > addkey.exp
-        echo 'expect "Enter passphrase"' >> addkey.exp
-        echo "send \"${{ secrets.G100_SSH_PASSPHRASE }}\\r\"" >> addkey.exp
-        echo 'expect eof' >> addkey.exp
-        expect addkey.exp
-
-        cat <<CONFIG > ~/.ssh/config
+        cat <<EOF > ~/.ssh/config
         Host galileo
           HostName ${{ secrets.SLURM_HOST }}
           User ${{ secrets.SLURM_USER }}
@@ -118,20 +105,17 @@ jobs:
           IdentitiesOnly yes
           StrictHostKeyChecking no
           UserKnownHostsFile=/dev/null
-        CONFIG
-
+        EOF
     # Step 14: Ensure working directory exists on remote cluster
     - name: Ensure ~/seproject exists on Galileo
       run: |
         echo "Creating remote project directory if not exists..."
         ssh -F ~/.ssh/config galileo "mkdir -p ~/seproject"
-
     # Step 15: Transfer the job script and container to the remote cluster
     - name: Transfer job script and sif file to cluster via scp
       run: |
         echo "Transferring job.sh and grayscale.sif to Galileo..."
         scp -F ~/.ssh/config grayscale.sif job.sh galileo:~/seproject/
-
     # Step 16: Submit the job to the SLURM scheduler on the cluster
     - name: Submit job to cluster via SSH
       run: |
