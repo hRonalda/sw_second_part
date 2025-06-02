@@ -11,7 +11,7 @@ jobs:
   build-run:
     # Use a self-hosted runner 
     # Required for workflows needing Singularity and passphrase input
-#    runs-on: self-hosted
+    # runs-on: self-hosted
     # Alternative for GitHub-hosted runners (disabled due to incompatibility with passphrase flow)
     # runs-on: ubuntu-24.04
     runs-on: ubuntu-latest
@@ -103,23 +103,22 @@ jobs:
         sudo apt-get update && sudo apt-get install -y expect
 
         eval "$(ssh-agent -s)"
-        expect <<EOF
-spawn ssh-add ~/.ssh/my_key
-expect "Enter passphrase"
-send "${{ secrets.G100_SSH_PASSPHRASE }}\r"
-expect eof
-EOF
+        echo 'spawn ssh-add ~/.ssh/my_key' > addkey.exp
+        echo 'expect "Enter passphrase"' >> addkey.exp
+        echo "send \"${{ secrets.G100_SSH_PASSPHRASE }}\\r\"" >> addkey.exp
+        echo 'expect eof' >> addkey.exp
+        expect addkey.exp
 
         cat <<CONFIG > ~/.ssh/config
-Host galileo
-HostName ${{ secrets.SLURM_HOST }}
-User ${{ secrets.SLURM_USER }}
-IdentityFile ~/.ssh/my_key
-CertificateFile ~/.ssh/my_key-cert.pub
-IdentitiesOnly yes
-StrictHostKeyChecking no
-UserKnownHostsFile=/dev/null
-CONFIG
+        Host galileo
+          HostName ${{ secrets.SLURM_HOST }}
+          User ${{ secrets.SLURM_USER }}
+          IdentityFile ~/.ssh/my_key
+          CertificateFile ~/.ssh/my_key-cert.pub
+          IdentitiesOnly yes
+          StrictHostKeyChecking no
+          UserKnownHostsFile=/dev/null
+        CONFIG
 
     # Step 14: Ensure working directory exists on remote cluster
     - name: Ensure ~/seproject exists on Galileo
